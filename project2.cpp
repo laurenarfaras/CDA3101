@@ -6,8 +6,6 @@
 
 using namespace std;
 
-unordered_map<double, InstCat> MIPSInstructions;
-
 class InstCat {
 
 	public:
@@ -20,30 +18,34 @@ class InstCat {
 	string destination = "";
 	// immediate will also double as shift amount
 	string immediate = "";
+	int type = 0;
 
 	// constructor for category 1 instructions
-	InstCatOne(string inst, int tar, string reg1, string reg2, string dest) {
+	InstCat(string inst, int tar, string reg1, string reg2, string dest) {
 		instruction = inst;
 		target = tar;
 		register1 = reg1;
 		register2 = reg2;
 		destination = dest;
+		type = 1;
 	}
 
 	// constructor for category 2 instructions
-	InstCatTwo(string inst, string reg1, string reg2, string dest) {
+	InstCat(string inst, string reg1, string reg2, string dest) {
 		instruction = inst;
 		register1 = reg1;
 		register2 = reg2;
 		destination = dest;
+		type = 2;
 	}
 
 	// constructor for category 3 instructions
-	InstCatThree(string inst, string reg1, string dest, string immed) {
+	InstCat(string inst, string reg1, string dest, string immed, int type) {
 		instruction = inst;
 		register1 = reg1;
 		destination = dest;
 		immediate = immed;
+		type = 3;
 	}
 
 	InstCat() {}
@@ -51,6 +53,7 @@ class InstCat {
 };
 
 bool broke = false;
+unordered_map<double, InstCat> MIPSInstructions;
 
 int evaluateBinary(string binary);
 int dosComplement(string line);
@@ -64,7 +67,7 @@ int shiftLeft(int number, int amount)
   return number;
 }
 
-string category3opCode(string line)
+string category3opCode(string line, int address)
 {
   string instruction;
   if (line.substr(3,3) == "000")
@@ -84,6 +87,7 @@ string category3opCode(string line)
       immediate = to_string(evaluateBinary(immediate));
     }
     instruction = instruction + " "  + destination + ", " + source1 + ", #" + immediate;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, immediate, 3);
   } else if (line.substr(3,3) == "001")
   {
     instruction = "XORI";
@@ -101,6 +105,7 @@ string category3opCode(string line)
       immediate = to_string(evaluateBinary(immediate));
     }
     instruction = instruction + " "  + destination + ", " + source1 + ", #" + immediate;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, immediate, 3);
   } else if (line.substr(3,3) == "010")
   {
     instruction = "ADDI";
@@ -119,6 +124,7 @@ string category3opCode(string line)
     }
 
     instruction = instruction + " "  + destination + ", " + source1 + ", #" + immediate;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, immediate, 3);
   } else if (line.substr(3,3) == "011")
   {
     instruction = "SUBI";
@@ -137,6 +143,7 @@ string category3opCode(string line)
     }
 
     instruction = instruction + " "  + destination + ", " + source1 + ", #" + immediate;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, immediate, 3);
   } else if (line.substr(3,3) == "100")
   {
     instruction = "ANDI";
@@ -154,6 +161,7 @@ string category3opCode(string line)
       immediate = to_string(evaluateBinary(immediate));
     }
     instruction = instruction + " "  + destination + ", " + source1 + ", #" + immediate;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, immediate, 3);
   } else if (line.substr(3,3) == "101")
   {
     instruction = "SRL";
@@ -164,6 +172,7 @@ string category3opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     shiftAmount = to_string(evaluateBinary(shiftAmount));
     instruction = instruction + " " + destination + ", "  + source1 + ", #" + shiftAmount;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, shiftAmount, 3);
   } else if (line.substr(3,3) == "110")
   {
     instruction = "SRA";
@@ -174,6 +183,7 @@ string category3opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     shiftAmount = to_string(evaluateBinary(shiftAmount));
     instruction = instruction + " " + destination + ", "  + source1 + ", #" + shiftAmount;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, shiftAmount, 3);
   } else if (line.substr(3,3) == "111")
   {
     instruction = "SLL";
@@ -184,11 +194,12 @@ string category3opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     shiftAmount = to_string(evaluateBinary(shiftAmount));
     instruction = instruction + " " + destination + ", "  + source1 + ", #" + shiftAmount;
+		MIPSInstructions[address] = InstCat(instruction, source1, destination, shiftAmount, 3);
   }
   return instruction;
 }
 
-string category2opCode(string line)
+string category2opCode(string line, int address)
 {
   string instruction;
   if (line.substr(3,3) == "000")
@@ -201,6 +212,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "001")
   {
     instruction = "MUL";
@@ -211,6 +223,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "010")
   {
     instruction = "ADD";
@@ -221,6 +234,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "011")
   {
     instruction = "SUB";
@@ -231,6 +245,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "100")
   {
     instruction = "AND";
@@ -241,6 +256,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "101")
   {
     instruction = "OR";
@@ -251,6 +267,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "110")
   {
     instruction = "ADDU";
@@ -261,6 +278,7 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   } else if (line.substr(3,3) == "111")
   {
     instruction = "SUBU";
@@ -271,11 +289,12 @@ string category2opCode(string line)
     source1 = "R" + to_string(evaluateBinary(source1));
     source2 = "R" + to_string(evaluateBinary(source2));
     instruction = instruction + " " + destination + ", " + source1 + ", " + source2;
+		MIPSInstructions[address] = InstCat(instruction, source1, source2, destination);
   }
   return instruction;
 }
 
-string category1opCode(string line)
+string category1opCode(string line, int address)
 {
   string instruction;
   if (line.substr(3,3) == "000")
@@ -358,18 +377,18 @@ string category1opCode(string line)
   return instruction;
 }
 
-string determineCategory(string line)
+string determineCategory(string line, int address)
 {
   string instruction;
   if (line.substr (0,3) == "001")
   {
-    instruction = category1opCode(line);
+    instruction = category1opCode(line, address);
   } else if (line.substr(0,3) == "010")
   {
-    instruction = category2opCode(line);
+    instruction = category2opCode(line, address);
   } else if (line.substr(0,3) == "100")
   {
-    instruction = category3opCode(line);
+    instruction = category3opCode(line, address);
   }
   return instruction;
 }
@@ -445,7 +464,7 @@ int main(int argc, char *argv[])
       address += 4;
       if (!broke)
       {
-        string instruction = determineCategory(line);
+        string instruction = determineCategory(line, address);
         disassemblyfile << line << "\t" << address << "\t" << instruction << "\n";
       } else
       {
