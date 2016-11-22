@@ -21,12 +21,11 @@ class InstCat {
 	int type = 0;
 
 	// constructor for category 1 instructions
-	InstCat(string inst, int tar, string reg1, string reg2, string dest) {
+	InstCat(string inst, int tar, string reg1, string reg2) {
 		instruction = inst;
 		target = tar;
 		register1 = reg1;
 		register2 = reg2;
-		destination = dest;
 		type = 1;
 	}
 
@@ -300,6 +299,7 @@ string category1opCode(string line, int address)
   if (line.substr(3,3) == "000")
   {
     instruction = "NOP";
+		MIPSInstructions[address] = InstCat(instruction, 0, "", "");
   } else if (line.substr(3,3) == "001")
   {
     instruction = "J";
@@ -307,6 +307,7 @@ string category1opCode(string line, int address)
     int jumpAdd = evaluateBinary(jumpTarget);
     jumpAdd = shiftLeft(jumpAdd, 2);
     instruction = instruction + " #" + to_string(jumpAdd);
+		MIPSInstructions[address] = InstCat(instruction, jumpAdd, "", "");
   } else if (line.substr(3,3) == "010")
   {
     instruction = "BEQ";
@@ -317,6 +318,7 @@ string category1opCode(string line, int address)
     register2 = "R" + to_string(evaluateBinary(register2));
     beqOffset = to_string(evaluateBinary(beqOffset));
     instruction = instruction + " " + register1 + ", " + register2 + ", " + "#" + beqOffset;
+		MIPSInstructions[address] = InstCat(instruction, stoi(beqOffset), register1, register2);
   } else if (line.substr(3,3) == "011")
   {
     instruction = "BNE";
@@ -327,16 +329,18 @@ string category1opCode(string line, int address)
     register2 = "R" + to_string(evaluateBinary(register2));
     bneOffset = to_string(evaluateBinary(bneOffset));
     instruction = instruction + " " + register1 + ", " + register2 + ", " + "#" + bneOffset;
+		MIPSInstructions[address] = InstCat(instruction, stoi(bneOffset), register1, register2);
   } else if (line.substr(3,3) == "100")
   {
     instruction = "BGTZ";
     string register1 = line.substr(6,5);
     string register2 = "0";
-    string beqOffset = line.substr(16);
+    string bgtzOffset = line.substr(16);
     register1 = "R" + to_string(evaluateBinary(register1));
     register2 = "R" + register2;
-    beqOffset = to_string(dosComplement(beqOffset));
-    instruction = instruction + " " + register1 + ", #" + beqOffset;
+    bgtzOffset = to_string(dosComplement(bgtzOffset));
+    instruction = instruction + " " + register1 + ", #" + bgtzOffset;
+		MIPSInstructions[address] = InstCat(instruction, stoi(bgtzOffset), register1, "");
   } else if (line.substr(3,3) == "101")
   {
     instruction = "SW";
@@ -353,6 +357,7 @@ string category1opCode(string line, int address)
       offset = to_string(evaluateBinary(offset));
     }
     instruction = instruction + " " + register1 + ", " + offset + "(" + base + ")";
+		MIPSInstructions[address] = InstCat(instruction, stoi(offset), register1, base);
   } else if (line.substr(3,3) == "110")
   {
     instruction = "LW";
@@ -369,10 +374,12 @@ string category1opCode(string line, int address)
       offset = to_string(evaluateBinary(offset));
     }
     instruction = instruction + " " + register1 + ", " + offset + "(" + base + ")";
+		MIPSInstructions[address] = InstCat(instruction, offset, register1, base);
   } else if (line.substr(3,3) == "111")
   {
     instruction = "BREAK";
     broke = true;
+		MIPSInstructions[address] = InstCat(instruction, 0, "", "");
   }
   return instruction;
 }
